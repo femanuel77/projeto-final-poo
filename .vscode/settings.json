@@ -1,6 +1,7 @@
 {
     "java.project.referencedLibraries": [
         "lib/**/*.jar",
-        "ProjetoFinalPOO/lib/sqlite-jdbc-3.45.1.0-javadoc.jar"
+        "ProjetoFinalPOO/lib/sqlite-jdbc-3.45.1.0.jar",
+        "ProjetoFinalPOO/lib/sqlite-jdbc-3.36.0.3.jar"
     ]
 }

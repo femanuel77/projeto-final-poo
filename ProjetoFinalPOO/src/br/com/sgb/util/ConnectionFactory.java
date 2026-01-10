@@ -12,16 +12,22 @@ public class ConnectionFactory {
     // URL do banco: vai criar um arquivo "biblioteca.db" na pasta do projeto
     private static final String URL = "jdbc:sqlite:biblioteca.db";
 
-    public static Connection getConnection() {
+public static Connection getConnection() {
         try {
             if (connection == null || connection.isClosed()) {
-                // Carrega o driver (necessário em algumas versões do Java)
-                // Certifique-se de ter o .jar do sqlite no classpath
-                // Class.forName("org.sqlite.JDBC"); 
+                // Tenta carregar o driver e GRITA se não achar
+                try {
+                    Class.forName("org.sqlite.JDBC");
+                } catch (ClassNotFoundException e) {
+                    // SE ENTRAR AQUI, O .JAR NÃO ESTÁ NO CLASS PATH MESMO!
+                    javax.swing.JOptionPane.showMessageDialog(null, 
+                        "ERRO CRÍTICO: O arquivo .jar do SQLite não foi encontrado!\n" +
+                        "Verifique 'Referenced Libraries' no VS Code.");
+                    throw new RuntimeException("Driver SQLite não encontrado no Classpath!");
+                }
+
                 connection = DriverManager.getConnection(URL);
                 System.out.println("Conexão estabelecida com sucesso!");
-                
-                // Inicializa o banco (Cria tabelas se não existirem)
                 initializeDatabase();
             }
         } catch (SQLException e) {
