@@ -1,0 +1,88 @@
+package br.com.sgb.dao;
+
+import br.com.sgb.model.Livro;
+import br.com.sgb.util.ConnectionFactory;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+public class LivroDAO {
+
+    private Connection connection;
+
+    public LivroDAO() {
+        this.connection = ConnectionFactory.getConnection();
+    }
+
+    // CREATE
+    public void salvar(Livro livro) {
+        String sql = "INSERT INTO livro (isbn, titulo, edicao, editora, ano_publicacao) VALUES (?, ?, ?, ?, ?)";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, livro.getIsbn());
+            stmt.setString(2, livro.getTitulo());
+            stmt.setInt(3, livro.getEdicao());
+            stmt.setString(4, livro.getEditora());
+            stmt.setInt(5, livro.getAnoPublicacao());
+            
+            stmt.execute();
+            System.out.println("Livro salvo com sucesso!");
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao salvar livro: " + e.getMessage());
+        }
+    }
+
+    // READ (Listar todos)
+    public List<Livro> listarTodos() {
+        String sql = "SELECT * FROM livro";
+        List<Livro> livros = new ArrayList<>();
+
+        try (PreparedStatement stmt = connection.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            while (rs.next()) {
+                Livro l = new Livro();
+                l.setId(rs.getInt("id"));
+                l.setIsbn(rs.getString("isbn"));
+                l.setTitulo(rs.getString("titulo"));
+                l.setEdicao(rs.getInt("edicao"));
+                l.setEditora(rs.getString("editora"));
+                l.setAnoPublicacao(rs.getInt("ano_publicacao"));
+                livros.add(l);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao listar livros: " + e.getMessage());
+        }
+        return livros;
+    }
+
+    // UPDATE
+    public void atualizar(Livro livro) {
+        String sql = "UPDATE livro SET isbn=?, titulo=?, edicao=?, editora=?, ano_publicacao=? WHERE id=?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, livro.getIsbn());
+            stmt.setString(2, livro.getTitulo());
+            stmt.setInt(3, livro.getEdicao());
+            stmt.setString(4, livro.getEditora());
+            stmt.setInt(5, livro.getAnoPublicacao());
+            stmt.setInt(6, livro.getId());
+            stmt.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao atualizar livro: " + e.getMessage());
+        }
+    }
+
+    // DELETE
+    public void deletar(int id) {
+        String sql = "DELETE FROM livro WHERE id=?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao deletar livro: " + e.getMessage());
+        }
+    }
+}
