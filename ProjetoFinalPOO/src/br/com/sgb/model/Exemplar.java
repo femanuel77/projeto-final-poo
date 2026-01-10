@@ -26,4 +26,9 @@ public class Exemplar {
 
     public int getLivroId() { return livroId; }
     public void setLivroId(int livroId) { this.livroId = livroId; }
+
+    @Override
+    public String toString() {
+        return "Cód: " + this.codigoBarra + " (ID Livro: " + this.livroId + ")";
+    }
 }
