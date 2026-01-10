@@ -2,7 +2,7 @@
 
 Projeto final desenvolvido para a disciplina de *Programação Orientada a Objetos* do curso de *Análise e Desenvolvimento de Sistemas (IFPI)*.
 
-*Alunos:*  Adaildo Carvalho Mesquita, Francisco Emanuel Cunha Almeida
+*Alunos:*  Adaildo Carvalho Mesquita, Francisco Emanuel Cunha Almeida.
 
 O software consiste em uma aplicação Desktop em Java para controle de acervo e empréstimos, utilizando banco de dados embarcado (SQLite) para garantir portabilidade e persistência dos dados.
 
@@ -67,5 +67,4 @@ A estrutura abaixo reflete a organização dos pacotes e relacionamentos do cód
 Como o banco de dados é o *SQLite*, não é necessário instalar SGBD externo.
 
 1.  Certifique-se de ter o Java (JDK) instalado.
-2.  Tenha a biblioteca (JAR) do sqlite-jdbc no classpath do projeto.
-3.  Compile e execute a classe principal: br.com.biblioteca.view.TelaPrincipal.
+2.  Compile e execute a classe principal: br.com.biblioteca.view.TelaPrincipal.
