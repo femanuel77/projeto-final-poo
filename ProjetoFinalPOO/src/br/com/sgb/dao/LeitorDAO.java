@@ -1,0 +1,69 @@
+package br.com.sgb.dao;
+
+import br.com.sgb.model.Leitor;
+import br.com.sgb.util.ConnectionFactory;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class LeitorDAO {
+    private Connection connection;
+
+    public LeitorDAO() {
+        this.connection = ConnectionFactory.getConnection();
+    }
+
+    public void salvar(Leitor leitor) {
+        String sql = "INSERT INTO leitor (cpf, nome, email, status) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, leitor.getCpf());
+            stmt.setString(2, leitor.getNome());
+            stmt.setString(3, leitor.getEmail());
+            stmt.setString(4, leitor.getStatus());
+            stmt.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao salvar leitor: " + e.getMessage());
+        }
+    }
+
+    public List<Leitor> listarTodos() {
+        String sql = "SELECT * FROM leitor";
+        List<Leitor> leitores = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                Leitor l = new Leitor();
+                l.setId(rs.getInt("id"));
+                l.setCpf(rs.getString("cpf"));
+                l.setNome(rs.getString("nome"));
+                l.setEmail(rs.getString("email"));
+                l.setStatus(rs.getString("status"));
+                leitores.add(l);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao listar leitores: " + e.getMessage());
+        }
+        return leitores;
+    }
+    
+    // Método extra para buscar por CPF (útil na tela de empréstimo)
+    public Leitor buscarPorCpf(String cpf) {
+        String sql = "SELECT * FROM leitor WHERE cpf = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, cpf);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                Leitor l = new Leitor();
+                l.setId(rs.getInt("id"));
+                l.setCpf(rs.getString("cpf"));
+                l.setNome(rs.getString("nome"));
+                l.setEmail(rs.getString("email"));
+                l.setStatus(rs.getString("status"));
+                return l;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+}
