@@ -55,10 +55,10 @@ A estrutura abaixo reflete a organização dos pacotes e relacionamentos do cód
 ![Tela de Cadastro](assets/print-livros.png)
 
 ### Cadastro de Leitores
-![Tela Principal](assets/print-leitor.png)
+![Tela Principal](assets/print-leitor2.png)
 
 ### Realização de Empréstimo
-![Tela de Empréstimo](assets/print-emprestimo.png)
+![Tela de Empréstimo](assets/print-emprestimo2.png)
 
 ---
 
