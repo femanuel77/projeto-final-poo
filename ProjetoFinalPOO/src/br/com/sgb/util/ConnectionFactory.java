@@ -9,7 +9,7 @@ import java.sql.Statement;
 public class ConnectionFactory {
 
     private static Connection connection;
-    private static final String URL = "jdbc:sqlite:ProjetoFinalPOO/biblioteca.db";
+    private static final String URL = "jdbc:sqlite:biblioteca.db";
 
     public static Connection getConnection() {
         try {

@@ -6,13 +6,12 @@ import br.com.sgb.dao.LeitorDAO;
 import br.com.sgb.model.Emprestimo;
 import br.com.sgb.model.Exemplar;
 import br.com.sgb.model.Leitor;
-
-import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 
 public class PainelEmprestimo extends JPanel {
     private JComboBox<Leitor> cbLeitores;

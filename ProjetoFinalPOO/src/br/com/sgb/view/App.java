@@ -2,9 +2,9 @@ package br.com.sgb.view;
 
 import javax.swing.*;
 
-public class TelaPrincipal extends JFrame {
+public class App extends JFrame {
 
-    public TelaPrincipal() {
+    public App() {
         setTitle("SGB - Sistema de Gerenciamento de Biblioteca (Vibe Coding Edition)");
         setSize(900, 650); 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -47,7 +47,7 @@ public class TelaPrincipal extends JFrame {
         }
 
         SwingUtilities.invokeLater(() -> {
-            new TelaPrincipal().setVisible(true);
+            new App().setVisible(true);
         });
     }
 }
