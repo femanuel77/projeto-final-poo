@@ -1,10 +1,10 @@
 # 📚 Sistema de Gerenciamento de Biblioteca (SGB)
 
-Projeto final desenvolvido para a disciplina de *Programação Orientada a Objetos* do curso de *Análise e Desenvolvimento de Sistemas (IFPI)*.
+Projeto final desenvolvido para a disciplina de *Programação Orientada a Objetos* do curso de *Análise e Desenvolvimento de Sistemas (IFPI), Módulo **II*.
 
-*Alunos:*  Adaildo Carvalho Mesquita, Francisco Emanuel Cunha Almeida.
+*Alunos:* Adaildo Carvalho Mesquita e Francisco Emanuel Cunha Almeida.
 
-O software consiste em uma aplicação Desktop em Java para controle de acervo e empréstimos, utilizando banco de dados embarcado (SQLite) para garantir portabilidade e persistência dos dados.
+O software consiste em uma aplicação Desktop em Java para controle de acervo e empréstimos, utilizando banco de dados embarcado (SQLite) para garantir portabilidade e persistência dos dados. O Sistema de Gerenciamento de Biblioteca foi o escolhido para desenvolver esse projeto pela familiaridade dos desenvolvedores com as particularidades do sistema, que já foi trabalhado em outras disciplinas do período letivo.
 
 ---
 
@@ -67,4 +67,4 @@ A estrutura abaixo reflete a organização dos pacotes e relacionamentos do cód
 Como o banco de dados é o *SQLite*, não é necessário instalar SGBD externo.
 
 1.  Certifique-se de ter o Java (JDK) instalado.
-2.  Compile e execute a classe principal: br.com.biblioteca.view.TelaPrincipal.
+2.  Compile e execute a classe principal: br.com.biblioteca.view.App.
