@@ -1,6 +1,6 @@
 # 📚 Sistema de Gerenciamento de Biblioteca (SGB)
 
-Projeto final desenvolvido para a disciplina de *Programação Orientada a Objetos* do curso de *Análise e Desenvolvimento de Sistemas (IFPI), Módulo **II*.
+Projeto final desenvolvido para a disciplina de *Programação Orientada a Objetos* do curso de Análise e Desenvolvimento de Sistemas (IFPI), Módulo *II*.
 
 *Alunos:* Adaildo Carvalho Mesquita e Francisco Emanuel Cunha Almeida.
 
