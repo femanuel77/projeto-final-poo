@@ -46,7 +46,6 @@ public class LeitorDAO {
         return leitores;
     }
     
-    // Método extra para buscar por CPF (útil na tela de empréstimo)
     public Leitor buscarPorCpf(String cpf) {
         String sql = "SELECT * FROM leitor WHERE cpf = ?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -65,5 +64,27 @@ public class LeitorDAO {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public void atualizarStatus(int id, String novoStatus) {
+        String sql = "UPDATE leitor SET status=? WHERE id=?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, novoStatus);
+            stmt.setInt(2, id);
+            stmt.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao atualizar status: " + e.getMessage());
+        }
+    }
+
+    // --- NOVO: Deletar Leitor ---
+    public void deletar(int id) {
+        String sql = "DELETE FROM leitor WHERE id=?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            stmt.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException("Não é possível excluir: Leitor possui empréstimos vinculados!");
+        }
     }
 }

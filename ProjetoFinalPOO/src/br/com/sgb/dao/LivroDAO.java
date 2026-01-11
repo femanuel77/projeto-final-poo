@@ -17,32 +17,25 @@ public class LivroDAO {
         this.connection = ConnectionFactory.getConnection();
     }
 
-    // CREATE
     public void salvar(Livro livro) {
         String sql = "INSERT INTO livro (isbn, titulo, edicao, editora, ano_publicacao) VALUES (?, ?, ?, ?, ?)";
-        
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, livro.getIsbn());
             stmt.setString(2, livro.getTitulo());
             stmt.setInt(3, livro.getEdicao());
             stmt.setString(4, livro.getEditora());
             stmt.setInt(5, livro.getAnoPublicacao());
-            
             stmt.execute();
-            System.out.println("Livro salvo com sucesso!");
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao salvar livro: " + e.getMessage());
         }
     }
 
-    // READ (Listar todos)
     public List<Livro> listarTodos() {
         String sql = "SELECT * FROM livro";
         List<Livro> livros = new ArrayList<>();
-
         try (PreparedStatement stmt = connection.prepareStatement(sql);
              ResultSet rs = stmt.executeQuery()) {
-
             while (rs.next()) {
                 Livro l = new Livro();
                 l.setId(rs.getInt("id"));
@@ -59,30 +52,25 @@ public class LivroDAO {
         return livros;
     }
 
-    // UPDATE
-    public void atualizar(Livro livro) {
-        String sql = "UPDATE livro SET isbn=?, titulo=?, edicao=?, editora=?, ano_publicacao=? WHERE id=?";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setString(1, livro.getIsbn());
-            stmt.setString(2, livro.getTitulo());
-            stmt.setInt(3, livro.getEdicao());
-            stmt.setString(4, livro.getEditora());
-            stmt.setInt(5, livro.getAnoPublicacao());
-            stmt.setInt(6, livro.getId());
-            stmt.execute();
-        } catch (SQLException e) {
-            throw new RuntimeException("Erro ao atualizar livro: " + e.getMessage());
-        }
-    }
-
-    // DELETE
+    // --- NOVO: Deletar Livro e seus Exemplares ---
     public void deletar(int id) {
-        String sql = "DELETE FROM livro WHERE id=?";
-        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            stmt.execute();
+        // Primeiro deletamos os exemplares (Cascade manual)
+        // OBS: Se tiver empréstimo ativo, o banco vai bloquear por causa da FK, o que é BOM (Segurança)
+        String sqlExemplar = "DELETE FROM exemplar WHERE livro_id=?";
+        String sqlLivro = "DELETE FROM livro WHERE id=?";
+        
+        try {
+            // Transaction simples
+            try (PreparedStatement stmtEx = connection.prepareStatement(sqlExemplar)) {
+                stmtEx.setInt(1, id);
+                stmtEx.execute();
+            }
+            try (PreparedStatement stmtLiv = connection.prepareStatement(sqlLivro)) {
+                stmtLiv.setInt(1, id);
+                stmtLiv.execute();
+            }
         } catch (SQLException e) {
-            throw new RuntimeException("Erro ao deletar livro: " + e.getMessage());
+            throw new RuntimeException("Não é possível excluir: O livro possui empréstimos registrados!");
         }
     }
 }

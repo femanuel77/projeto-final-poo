@@ -16,14 +16,39 @@ import java.util.List;
 
 public class PainelEmprestimo extends JPanel {
     private JComboBox<Leitor> cbLeitores;
-    private JComboBox<Exemplar> cbExemplares; // Vamos mostrar Exemplares disponíveis
+    // Atenção: Mudamos para guardar um Item wrapper que facilita a busca
+    private JComboBox<ItemExemplar> cbExemplares; 
     private JTextField txtDataDevolucao;
+    private JTextField txtPesquisaHistorico; 
+    private JTextField txtFiltroLivro; 
+    private JCheckBox chkVerHistorico; 
     private JTable tabela;
     private DefaultTableModel modeloTabela;
     
     private EmprestimoDAO emprestimoDAO;
     private ExemplarDAO exemplarDAO;
     private LeitorDAO leitorDAO;
+    
+    private List<Emprestimo> listaEmprestimosCache;
+    private java.util.List<ItemExemplar> listaExemplaresCache; // Cache do nosso item especial
+
+    // Classe Interna para ajudar na busca (Wrapper)
+    // Isso resolve o problema de pesquisar pelo nome do livro!
+    private class ItemExemplar {
+        Exemplar exemplar;
+        String tituloLivro;
+        
+        public ItemExemplar(Exemplar ex, String titulo) {
+            this.exemplar = ex;
+            this.tituloLivro = titulo;
+        }
+        
+        @Override
+        public String toString() {
+            // O que vai aparecer na caixinha para o usuário
+            return tituloLivro + " (Cód: " + exemplar.getCodigoBarra() + ")";
+        }
+    }
 
     public PainelEmprestimo() {
         emprestimoDAO = new EmprestimoDAO();
@@ -32,99 +57,140 @@ public class PainelEmprestimo extends JPanel {
         
         setLayout(new BorderLayout());
 
-        // --- Painel Superior: Novo Empréstimo ---
-        JPanel formPanel = new JPanel(new GridLayout(4, 2, 5, 5));
+        // --- Painel Superior ---
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 5, 5));
         formPanel.setBorder(BorderFactory.createTitledBorder("Novo Empréstimo"));
 
         cbLeitores = new JComboBox<>();
+        
+        JPanel panelFiltroLivro = new JPanel(new BorderLayout());
+        txtFiltroLivro = new JTextField();
+        JButton btnFiltrarExemplar = new JButton("🔎");
+        btnFiltrarExemplar.addActionListener(e -> filtrarComboExemplares());
+        panelFiltroLivro.add(txtFiltroLivro, BorderLayout.CENTER);
+        panelFiltroLivro.add(btnFiltrarExemplar, BorderLayout.EAST);
+        
         cbExemplares = new JComboBox<>();
         
-        // Data automática (Hoje + 7 dias)
         LocalDate dataPrevista = LocalDate.now().plusDays(7);
         txtDataDevolucao = new JTextField(dataPrevista.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
 
-        formPanel.add(new JLabel("Selecione o Leitor:"));
-        formPanel.add(cbLeitores);
-        
-        formPanel.add(new JLabel("Livro Disponível (ID - Código):"));
-        formPanel.add(cbExemplares);
-        
-        formPanel.add(new JLabel("Data Prevista Devolução:"));
-        formPanel.add(txtDataDevolucao);
+        formPanel.add(new JLabel("Selecione o Leitor:")); formPanel.add(cbLeitores);
+        formPanel.add(new JLabel("Buscar Livro (Nome/ISBN):")); formPanel.add(panelFiltroLivro);
+        formPanel.add(new JLabel("Selecione o Exemplar:")); formPanel.add(cbExemplares);
+        formPanel.add(new JLabel("Data Prevista Devolução:")); formPanel.add(txtDataDevolucao);
 
         JButton btnEmprestar = new JButton("Registrar Empréstimo");
-        btnEmprestar.setBackground(new Color(100, 200, 100)); // Verdezinho
+        btnEmprestar.setBackground(new Color(100, 200, 100));
         btnEmprestar.addActionListener(e -> realizarEmprestimo());
         
-        formPanel.add(new JLabel("")); // Espaço vazio
-        formPanel.add(btnEmprestar);
-
+        formPanel.add(new JLabel("")); formPanel.add(btnEmprestar);
         add(formPanel, BorderLayout.NORTH);
 
-        // --- Centro: Tabela de Empréstimos Ativos ---
-        modeloTabela = new DefaultTableModel(new Object[]{"ID", "Leitor", "Livro", "Data Prevista", "Status"}, 0);
-        tabela = new JTable(modeloTabela);
-        add(new JScrollPane(tabela), BorderLayout.CENTER);
+        // --- Centro: Tabela ---
+        JPanel centroPanel = new JPanel(new BorderLayout());
+        JPanel toolsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        txtPesquisaHistorico = new JTextField(20);
+        JButton btnBuscarHist = new JButton("Buscar na Tabela");
+        btnBuscarHist.addActionListener(e -> filtrarTabela());
+        
+        chkVerHistorico = new JCheckBox("Ver Histórico Completo");
+        chkVerHistorico.addActionListener(e -> filtrarTabela());
+        
+        toolsPanel.add(new JLabel("Pesquisar:")); toolsPanel.add(txtPesquisaHistorico);
+        toolsPanel.add(btnBuscarHist); toolsPanel.add(chkVerHistorico);
+        centroPanel.add(toolsPanel, BorderLayout.NORTH);
 
-        // --- Baixo: Botão de Devolução ---
+        modeloTabela = new DefaultTableModel(new Object[]{"ID", "Leitor", "Livro", "Previsto", "Devolvido em", "Status"}, 0);
+        tabela = new JTable(modeloTabela);
+        centroPanel.add(new JScrollPane(tabela), BorderLayout.CENTER);
+        add(centroPanel, BorderLayout.CENTER);
+
+        // --- Baixo ---
         JPanel panelBaixo = new JPanel();
-        JButton btnDevolver = new JButton("Confirmar Devolução do Item Selecionado");
-        btnDevolver.setBackground(new Color(200, 100, 100)); // Vermelhinho
+        JButton btnDevolver = new JButton("Confirmar Devolução");
+        btnDevolver.setBackground(new Color(200, 100, 100));
         btnDevolver.setForeground(Color.WHITE);
         btnDevolver.addActionListener(e -> realizarDevolucao());
+        
+        JButton btnRelatorio = new JButton("📊 Relatório");
+        btnRelatorio.addActionListener(e -> gerarRelatorio());
         
         JButton btnAtualizar = new JButton("🔄 Atualizar Listas");
         btnAtualizar.addActionListener(e -> carregarDados());
 
-        panelBaixo.add(btnDevolver);
-        panelBaixo.add(btnAtualizar);
+        panelBaixo.add(btnDevolver); panelBaixo.add(btnRelatorio); panelBaixo.add(btnAtualizar);
         add(panelBaixo, BorderLayout.SOUTH);
 
         carregarDados();
     }
 
-    private void carregarDados() {
-        // 1. Carregar ComboBox de Leitores
+    public void carregarDados() {
         cbLeitores.removeAllItems();
         List<Leitor> leitores = leitorDAO.listarTodos();
         for (Leitor l : leitores) {
-            cbLeitores.addItem(l); // O toString() da classe Leitor vai mostrar o nome
+            if("ATIVO".equals(l.getStatus())) cbLeitores.addItem(l);
         }
 
-        // 2. Carregar ComboBox de Exemplares (Só os DISPONIVEIS)
-        // Nota: Para facilitar o Vibe Coding, vamos listar todos e filtrar na memória ou 
-        // idealmente o DAO teria um método 'listarDisponiveis'. Vamos improvisar:
         cbExemplares.removeAllItems();
-        // Listamos todos os exemplares de um livro específico? 
-        // Não, aqui vamos listar TUDO que tem no banco para ser rápido.
-        // OBS: Você precisa cadastrar exemplares na aba Livros primeiro!
+        listaExemplaresCache = new java.util.ArrayList<>();
         
-        // Truque rápido: Vamos pegar todos os livros, e para cada livro, pegar seus exemplares
-        // Isso não é performático para milhões de livros, mas para o trabalho serve.
+        // Carrega livros e seus exemplares, criando o Wrapper com o Título
         var livros = new br.com.sgb.dao.LivroDAO().listarTodos();
         for (var livro : livros) {
             var exemplares = exemplarDAO.listarPorLivro(livro.getId());
             for (Exemplar ex : exemplares) {
                 if ("DISPONIVEL".equalsIgnoreCase(ex.getStatus())) {
-                    // Adicionamos uma string personalizada ou criamos um Wrapper
-                    // Vamos usar o próprio objeto Exemplar, mas precisamos sobrescrever toString no model Exemplar
-                    // Se não tiver toString lá, vai ficar feio. 
-                    // Dica: Adicione toString na classe Exemplar para retornar "Código - Status"
-                   cbExemplares.addItem(ex); 
+                    ItemExemplar item = new ItemExemplar(ex, livro.getTitulo());
+                    listaExemplaresCache.add(item);
+                    cbExemplares.addItem(item);
                 }
             }
         }
 
-        // 3. Preencher Tabela
+        listaEmprestimosCache = emprestimoDAO.listarTodos();
+        filtrarTabela();
+    }
+    
+    // CORREÇÃO DA BUSCA: Case Insensitive no Título
+    private void filtrarComboExemplares() {
+        String termo = txtFiltroLivro.getText().toLowerCase(); // Normaliza para minúsculo
+        cbExemplares.removeAllItems();
+        
+        if(listaExemplaresCache == null) return;
+
+        for(ItemExemplar item : listaExemplaresCache) {
+            // Busca tanto no Título quanto no Código de Barras
+            if(item.tituloLivro.toLowerCase().contains(termo) || 
+               item.exemplar.getCodigoBarra().toLowerCase().contains(termo)) {
+                cbExemplares.addItem(item);
+            }
+        }
+        if(cbExemplares.getItemCount() == 0) {
+            JOptionPane.showMessageDialog(this, "Nenhum livro disponível com esse termo.");
+            // Restaura a lista completa
+            for(ItemExemplar item : listaExemplaresCache) cbExemplares.addItem(item);
+        }
+    }
+
+    private void filtrarTabela() {
+        if(listaEmprestimosCache == null) return;
         modeloTabela.setRowCount(0);
-        List<Emprestimo> emprestimos = emprestimoDAO.listarTodos();
-        for (Emprestimo emp : emprestimos) {
-            if ("EM_ANDAMENTO".equals(emp.getStatus())) {
+        String termo = txtPesquisaHistorico.getText().toLowerCase();
+        boolean mostrarHistorico = chkVerHistorico.isSelected();
+
+        for (Emprestimo emp : listaEmprestimosCache) {
+            // Busca Case Insensitive
+            boolean matchTexto = emp.getNomeLeitor().toLowerCase().contains(termo) ||
+                                 emp.getTituloLivro().toLowerCase().contains(termo);
+            
+            boolean matchStatus = mostrarHistorico || "EM_ANDAMENTO".equals(emp.getStatus());
+
+            if (matchTexto && matchStatus) {
                 modeloTabela.addRow(new Object[]{
-                    emp.getId(),
-                    emp.getNomeLeitor(),
-                    emp.getTituloLivro(),
+                    emp.getId(), emp.getNomeLeitor(), emp.getTituloLivro(),
                     emp.getDataPrevistaDevolucao(),
+                    emp.getDataDevolucao() == null ? "-" : emp.getDataDevolucao(),
                     emp.getStatus()
                 });
             }
@@ -134,23 +200,22 @@ public class PainelEmprestimo extends JPanel {
     private void realizarEmprestimo() {
         try {
             Leitor leitor = (Leitor) cbLeitores.getSelectedItem();
-            Exemplar exemplar = (Exemplar) cbExemplares.getSelectedItem();
+            ItemExemplar item = (ItemExemplar) cbExemplares.getSelectedItem(); // Pega o wrapper
 
-            if (leitor == null || exemplar == null) {
+            if (leitor == null || item == null) {
                 JOptionPane.showMessageDialog(this, "Selecione Leitor e Exemplar!");
                 return;
             }
 
             Emprestimo emp = new Emprestimo();
             emp.setLeitorId(leitor.getId());
-            emp.setExemplarId(exemplar.getId());
+            emp.setExemplarId(item.exemplar.getId()); // Extrai o ID do exemplar de dentro do wrapper
             emp.setDataEmprestimo(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
             emp.setDataPrevistaDevolucao(txtDataDevolucao.getText());
             
             emprestimoDAO.registrarEmprestimo(emp);
-            
             JOptionPane.showMessageDialog(this, "Empréstimo realizado!");
-            carregarDados(); // Atualiza combos e tabela
+            carregarDados(); 
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this, "Erro: " + e.getMessage());
         }
@@ -159,23 +224,18 @@ public class PainelEmprestimo extends JPanel {
     private void realizarDevolucao() {
         int linhaSelecionada = tabela.getSelectedRow();
         if (linhaSelecionada == -1) {
-            JOptionPane.showMessageDialog(this, "Selecione um empréstimo na tabela para devolver.");
+            JOptionPane.showMessageDialog(this, "Selecione um empréstimo!");
+            return;
+        }
+
+        String status = (String) tabela.getValueAt(linhaSelecionada, 5);
+        if(!"EM_ANDAMENTO".equals(status)) {
+            JOptionPane.showMessageDialog(this, "Item já devolvido!");
             return;
         }
 
         int idEmprestimo = (int) tabela.getValueAt(linhaSelecionada, 0);
-        
-        // Precisamos saber qual exemplar é para liberar ele.
-        // No modelo da tabela simplificado não coloquei o ID do exemplar visível.
-        // Para resolver rápido: Vamos buscar o empréstimo no banco ou...
-        // ...Recuperar da lista original.
-        
-        // Forma rápida e segura: Pergunta a data de devolução
         String dataHoje = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-        
-        // Aqui temos um pequeno problema lógico: O DAO pede o ID do exemplar para liberar.
-        // Vamos ter que buscar esse empréstimo pelo ID para saber qual exemplar é.
-        // (Vibe Coding: Vou fazer uma busca rápida na lista da memória)
         
         List<Emprestimo> lista = emprestimoDAO.listarTodos();
         int idExemplar = -1;
@@ -188,8 +248,21 @@ public class PainelEmprestimo extends JPanel {
 
         if(idExemplar != -1) {
             emprestimoDAO.registrarDevolucao(idEmprestimo, dataHoje, idExemplar);
-            JOptionPane.showMessageDialog(this, "Devolução confirmada! Livro disponível novamente.");
+            JOptionPane.showMessageDialog(this, "Devolução confirmada!");
             carregarDados();
         }
+    }
+    
+    private void gerarRelatorio() {
+        List<Emprestimo> todos = emprestimoDAO.listarTodos();
+        long totalEmprestados = todos.stream().filter(e -> "EM_ANDAMENTO".equals(e.getStatus())).count();
+        long totalDevolvidos = todos.stream().filter(e -> "FINALIZADO".equals(e.getStatus())).count();
+        
+        String msg = """
+            === RELATÓRIO GERAL ===
+            📚 Empréstimos Ativos: %d
+            ✅ Devoluções Realizadas: %d
+            """.formatted(totalEmprestados, totalDevolvidos);
+        JOptionPane.showMessageDialog(this, msg);
     }
 }
