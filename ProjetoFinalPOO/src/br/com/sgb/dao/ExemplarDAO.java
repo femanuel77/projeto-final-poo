@@ -18,12 +18,12 @@ public class ExemplarDAO {
     }
 
     public void salvar(Exemplar exemplar) {
-        // Aqui garantimos o relacionamento 1:N salvando o ID do livro
+
         String sql = "INSERT INTO exemplar (codigo_barra, status, livro_id) VALUES (?, ?, ?)";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
             stmt.setString(1, exemplar.getCodigoBarra());
             stmt.setString(2, exemplar.getStatus());
-            stmt.setInt(3, exemplar.getLivroId()); // Chave estrangeira
+            stmt.setInt(3, exemplar.getLivroId()); 
             stmt.execute();
         } catch (SQLException e) {
             throw new RuntimeException("Erro ao salvar exemplar: " + e.getMessage());
@@ -50,7 +50,6 @@ public class ExemplarDAO {
         return exemplares;
     }
     
-    // Método extra para mudar status (Útil para empréstimo)
     public void atualizarStatus(int id, String novoStatus) {
         String sql = "UPDATE exemplar SET status=? WHERE id=?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {

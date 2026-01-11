@@ -8,10 +8,8 @@ public class Livro {
     private String editora;
     private int anoPublicacao;
 
-    // Construtor vazio (obrigatório para boas práticas)
     public Livro() {}
 
-    // Construtor cheio (para facilitar a criação)
     public Livro(String isbn, String titulo, int edicao, String editora, int anoPublicacao) {
         this.isbn = isbn;
         this.titulo = titulo;
@@ -41,6 +39,6 @@ public class Livro {
     
     @Override
     public String toString() {
-        return this.titulo + " (" + this.editora + ")"; // Facilita mostrar na tela depois
+        return this.titulo + " (" + this.editora + ")"; 
     }
 }

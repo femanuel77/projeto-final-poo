@@ -5,7 +5,7 @@ public class Leitor {
     private String cpf;
     private String nome;
     private String email;
-    private String status; // 'ATIVO', 'BLOQUEADO'
+    private String status; 
 
     public Leitor() {}
 

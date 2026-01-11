@@ -8,7 +8,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.List;
 import java.util.regex.Pattern;
 
 public class PainelLeitor extends JPanel {
@@ -18,40 +17,46 @@ public class PainelLeitor extends JPanel {
     private JTable tabela;
     private DefaultTableModel modeloTabela;
     private LeitorDAO leitorDAO;
+    
+
+    private int idEmEdicao = -1; 
+    private JButton btnSalvar;
 
     public PainelLeitor() {
         leitorDAO = new LeitorDAO();
         setLayout(new BorderLayout());
 
         JPanel formPanel = new JPanel(new GridLayout(4, 2, 5, 5));
-        formPanel.setBorder(BorderFactory.createTitledBorder("Gerenciar Leitor"));
+        formPanel.setBorder(BorderFactory.createTitledBorder("Cadastrar / Editar Leitor"));
 
         try {
             MaskFormatter mascaraCpf = new MaskFormatter("###.###.###-##");
             mascaraCpf.setPlaceholderCharacter('_');
             txtCpf = new JFormattedTextField(mascaraCpf);
-        } catch (Exception e) {
-            txtCpf = new JFormattedTextField();
-        }
+        } catch (Exception e) { txtCpf = new JFormattedTextField(); }
 
         txtNome = new JTextField();
-        // NOVO: Bloqueia números no nome
         bloquearNumeros(txtNome);
-        
         txtEmail = new JTextField();
         cbStatus = new JComboBox<>(new String[]{"ATIVO", "BLOQUEADO"});
 
-        formPanel.add(new JLabel("CPF (Obrigatório) * :")); formPanel.add(txtCpf);
-        formPanel.add(new JLabel("Nome (Sem números) * :")); formPanel.add(txtNome);
+        formPanel.add(new JLabel("CPF * :")); formPanel.add(txtCpf);
+        formPanel.add(new JLabel("Nome * :")); formPanel.add(txtNome);
         formPanel.add(new JLabel("Email * :")); formPanel.add(txtEmail);
-        formPanel.add(new JLabel("Status Inicial:")); formPanel.add(cbStatus);
+        formPanel.add(new JLabel("Status:")); formPanel.add(cbStatus);
 
-        JButton btnSalvar = new JButton("Cadastrar Leitor");
-        btnSalvar.addActionListener(e -> salvar());
+        btnSalvar = new JButton("Cadastrar Leitor");
+        btnSalvar.addActionListener(e -> salvarOuAtualizar());
+        
+        JButton btnCancelar = new JButton("Cancelar");
+        btnCancelar.addActionListener(e -> resetarFormulario());
+        
+        JPanel painelBotoesForm = new JPanel();
+        painelBotoesForm.add(btnSalvar); painelBotoesForm.add(btnCancelar);
 
         JPanel topo = new JPanel(new BorderLayout());
         topo.add(formPanel, BorderLayout.CENTER);
-        topo.add(btnSalvar, BorderLayout.SOUTH);
+        topo.add(painelBotoesForm, BorderLayout.SOUTH);
         add(topo, BorderLayout.NORTH);
 
         modeloTabela = new DefaultTableModel(new Object[]{"ID", "Nome", "CPF", "Email", "Status"}, 0);
@@ -59,110 +64,113 @@ public class PainelLeitor extends JPanel {
         add(new JScrollPane(tabela), BorderLayout.CENTER);
         
         JPanel rodape = new JPanel();
-        JButton btnAlterarStatus = new JButton("Bloquear/Desbloquear");
-        btnAlterarStatus.setBackground(new Color(255, 200, 200));
-        btnAlterarStatus.addActionListener(e -> alternarStatus());
-
-        JButton btnExcluir = new JButton("🗑️ Excluir Leitor");
-        btnExcluir.setBackground(new Color(200, 100, 100));
+        JButton btnEditar = new JButton("✏️ Editar");
+        btnEditar.setBackground(new Color(255, 255, 200));
+        btnEditar.addActionListener(e -> carregarParaEdicao());
+        
+        JButton btnStatus = new JButton("Bloquear/Desbloquear");
+        btnStatus.addActionListener(e -> alternarStatus());
+        
+        JButton btnExcluir = new JButton("🗑️ Excluir");
+        btnExcluir.setBackground(new Color(255, 100, 100));
         btnExcluir.setForeground(Color.WHITE);
         btnExcluir.addActionListener(e -> excluirLeitor());
         
-        JButton btnRefresh = new JButton("Atualizar Lista");
+        JButton btnRefresh = new JButton("Atualizar");
         btnRefresh.addActionListener(e -> carregar());
         
-        rodape.add(btnAlterarStatus); rodape.add(btnExcluir); rodape.add(btnRefresh);
+        rodape.add(btnEditar); rodape.add(btnStatus); rodape.add(btnExcluir); rodape.add(btnRefresh);
         add(rodape, BorderLayout.SOUTH);
 
         carregar();
     }
+    
+    private void carregarParaEdicao() {
+        int linha = tabela.getSelectedRow();
+        if (linha == -1) {
+            JOptionPane.showMessageDialog(this, "Selecione um leitor para editar.");
+            return;
+        }
+        idEmEdicao = (int) tabela.getValueAt(linha, 0);
+        txtNome.setText((String) tabela.getValueAt(linha, 1));
+        txtCpf.setValue((String) tabela.getValueAt(linha, 2));
+        txtEmail.setText((String) tabela.getValueAt(linha, 3));
+        cbStatus.setSelectedItem((String) tabela.getValueAt(linha, 4));
+        
+        btnSalvar.setText("💾 Salvar Alterações");
+        btnSalvar.setBackground(new Color(255, 200, 100));
+    }
 
-    private void salvar() {
+    private void salvarOuAtualizar() {
         try {
             String cpfOriginal = (String) txtCpf.getValue();
             if (cpfOriginal == null || cpfOriginal.contains("_")) {
-                JOptionPane.showMessageDialog(this, "CPF inválido! Preencha os 11 dígitos.");
-                return;
+                JOptionPane.showMessageDialog(this, "CPF inválido!"); return;
             }
-            
             if (txtNome.getText().trim().isEmpty() || txtEmail.getText().trim().isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Nome e Email são obrigatórios!");
-                return;
+                JOptionPane.showMessageDialog(this, "Nome e Email obrigatórios!"); return;
             }
-            
-            String email = txtEmail.getText();
             String emailRegex = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$";
-            if (!Pattern.matches(emailRegex, email)) {
-                JOptionPane.showMessageDialog(this, "E-mail inválido! Formato: user@domain.com");
-                return;
+            if (!Pattern.matches(emailRegex, txtEmail.getText())) {
+                JOptionPane.showMessageDialog(this, "E-mail inválido!"); return;
             }
 
-            Leitor l = new Leitor(cpfOriginal, txtNome.getText(), email, (String) cbStatus.getSelectedItem());
-            leitorDAO.salvar(l);
-            JOptionPane.showMessageDialog(this, "Leitor cadastrado!");
-            txtCpf.setValue(null); txtNome.setText(""); txtEmail.setText("");
+            Leitor l = new Leitor(cpfOriginal, txtNome.getText(), txtEmail.getText(), (String) cbStatus.getSelectedItem());
+
+            if (idEmEdicao == -1) {
+                // INSERT
+                leitorDAO.salvar(l);
+                JOptionPane.showMessageDialog(this, "Leitor cadastrado!");
+            } else {
+                // UPDATE
+                l.setId(idEmEdicao);
+                leitorDAO.atualizar(l);
+                JOptionPane.showMessageDialog(this, "Leitor atualizado!");
+            }
+            
+            resetarFormulario();
             carregar();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Erro ao salvar (CPF já existe?): " + e.getMessage());
+            JOptionPane.showMessageDialog(this, "Erro: " + e.getMessage());
         }
     }
+    
+    private void resetarFormulario() {
+        idEmEdicao = -1;
+        txtCpf.setValue(null); txtNome.setText(""); txtEmail.setText("");
+        btnSalvar.setText("Cadastrar Leitor");
+        btnSalvar.setBackground(null);
+    }
 
-    // --- MÉTODOS DE CONTROLE ---
     private void alternarStatus() {
         int linha = tabela.getSelectedRow();
-        if (linha == -1) {
-            JOptionPane.showMessageDialog(this, "Selecione um leitor!");
-            return;
-        }
+        if (linha == -1) return;
         int id = (int) tabela.getValueAt(linha, 0);
-        String statusAtual = (String) tabela.getValueAt(linha, 4);
-        String novoStatus = statusAtual.equals("ATIVO") ? "BLOQUEADO" : "ATIVO";
-        leitorDAO.atualizarStatus(id, novoStatus);
-        JOptionPane.showMessageDialog(this, "Status alterado para: " + novoStatus);
+        String novo = tabela.getValueAt(linha, 4).equals("ATIVO") ? "BLOQUEADO" : "ATIVO";
+        leitorDAO.atualizarStatus(id, novo);
         carregar();
     }
 
     private void excluirLeitor() {
         int linha = tabela.getSelectedRow();
-        if (linha == -1) {
-            JOptionPane.showMessageDialog(this, "Selecione um leitor para excluir!");
-            return;
-        }
+        if (linha == -1) return;
         int id = (int) tabela.getValueAt(linha, 0);
-        String nome = (String) tabela.getValueAt(linha, 1);
-        
-        int confirmacao = JOptionPane.showConfirmDialog(this, 
-            "Tem certeza que deseja excluir " + nome + "?\nEssa ação é irreversível.", 
-            "Excluir", JOptionPane.YES_NO_OPTION);
-            
-        if(confirmacao == JOptionPane.YES_OPTION) {
-            try {
-                leitorDAO.deletar(id);
-                JOptionPane.showMessageDialog(this, "Leitor excluído com sucesso!");
-                carregar();
-            } catch(Exception e) {
-                JOptionPane.showMessageDialog(this, "Erro: Este leitor possui histórico de empréstimos e não pode ser apagado.");
-            }
+        if (JOptionPane.showConfirmDialog(this, "Excluir leitor?", "Confirmação", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+            try { leitorDAO.deletar(id); carregar(); } catch(Exception e) { JOptionPane.showMessageDialog(this, e.getMessage()); }
         }
     }
 
     public void carregar() {
         modeloTabela.setRowCount(0);
-        List<Leitor> lista = leitorDAO.listarTodos();
-        for (Leitor l : lista) {
+        for (Leitor l : leitorDAO.listarTodos()) {
             modeloTabela.addRow(new Object[]{l.getId(), l.getNome(), l.getCpf(), l.getEmail(), l.getStatus()});
         }
     }
     
-    // Método auxiliar para impedir números no nome
     private void bloquearNumeros(JTextField campo) {
         campo.addKeyListener(new KeyAdapter() {
             public void keyTyped(KeyEvent e) {
-                char c = e.getKeyChar();
-                // Se for dígito numérico, consome (ignora)
-                if (Character.isDigit(c)) {
-                    e.consume();
-                }
+                if (Character.isDigit(e.getKeyChar())) e.consume();
             }
         });
     }

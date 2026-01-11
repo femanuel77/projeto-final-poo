@@ -25,6 +25,21 @@ public class LeitorDAO {
             throw new RuntimeException("Erro ao salvar leitor: " + e.getMessage());
         }
     }
+    
+    // --- NOVO MÉTODO: ATUALIZAR (UPDATE) ---
+    public void atualizar(Leitor leitor) {
+        String sql = "UPDATE leitor SET cpf=?, nome=?, email=?, status=? WHERE id=?";
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setString(1, leitor.getCpf());
+            stmt.setString(2, leitor.getNome());
+            stmt.setString(3, leitor.getEmail());
+            stmt.setString(4, leitor.getStatus());
+            stmt.setInt(5, leitor.getId());
+            stmt.execute();
+        } catch (SQLException e) {
+            throw new RuntimeException("Erro ao atualizar dados: " + e.getMessage());
+        }
+    }
 
     public List<Leitor> listarTodos() {
         String sql = "SELECT * FROM leitor";
@@ -77,7 +92,6 @@ public class LeitorDAO {
         }
     }
 
-    // --- NOVO: Deletar Leitor ---
     public void deletar(int id) {
         String sql = "DELETE FROM leitor WHERE id=?";
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {

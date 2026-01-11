@@ -3,8 +3,8 @@ package br.com.sgb.model;
 public class Exemplar {
     private int id;
     private String codigoBarra;
-    private String status; // 'DISPONIVEL', 'EMPRESTADO', etc.
-    private int livroId;   // Chave estrangeira para o Livro (Relacionamento 1:N)
+    private String status; 
+    private int livroId;   
 
     public Exemplar() {}
 

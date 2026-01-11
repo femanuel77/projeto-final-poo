@@ -5,13 +5,12 @@ public class Emprestimo {
     private String dataEmprestimo;
     private String dataPrevistaDevolucao;
     private String dataDevolucao;
-    private String status; // 'EM_ANDAMENTO', 'FINALIZADO'
+    private String status; 
     
     // Relacionamentos
     private int leitorId;
     private int exemplarId;
 
-    // Campos auxiliares para exibir na tabela (opcional, mas ajuda muito na View)
     private String nomeLeitor;
     private String tituloLivro;
 

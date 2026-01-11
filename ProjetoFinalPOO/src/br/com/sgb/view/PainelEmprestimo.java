@@ -30,10 +30,8 @@ public class PainelEmprestimo extends JPanel {
     private LeitorDAO leitorDAO;
     
     private List<Emprestimo> listaEmprestimosCache;
-    private java.util.List<ItemExemplar> listaExemplaresCache; // Cache do nosso item especial
+    private java.util.List<ItemExemplar> listaExemplaresCache; 
 
-    // Classe Interna para ajudar na busca (Wrapper)
-    // Isso resolve o problema de pesquisar pelo nome do livro!
     private class ItemExemplar {
         Exemplar exemplar;
         String tituloLivro;
@@ -45,7 +43,6 @@ public class PainelEmprestimo extends JPanel {
         
         @Override
         public String toString() {
-            // O que vai aparecer na caixinha para o usuário
             return tituloLivro + " (Cód: " + exemplar.getCodigoBarra() + ")";
         }
     }
@@ -57,7 +54,6 @@ public class PainelEmprestimo extends JPanel {
         
         setLayout(new BorderLayout());
 
-        // --- Painel Superior ---
         JPanel formPanel = new JPanel(new GridLayout(6, 2, 5, 5));
         formPanel.setBorder(BorderFactory.createTitledBorder("Novo Empréstimo"));
 
@@ -87,7 +83,6 @@ public class PainelEmprestimo extends JPanel {
         formPanel.add(new JLabel("")); formPanel.add(btnEmprestar);
         add(formPanel, BorderLayout.NORTH);
 
-        // --- Centro: Tabela ---
         JPanel centroPanel = new JPanel(new BorderLayout());
         JPanel toolsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         txtPesquisaHistorico = new JTextField(20);
@@ -106,7 +101,6 @@ public class PainelEmprestimo extends JPanel {
         centroPanel.add(new JScrollPane(tabela), BorderLayout.CENTER);
         add(centroPanel, BorderLayout.CENTER);
 
-        // --- Baixo ---
         JPanel panelBaixo = new JPanel();
         JButton btnDevolver = new JButton("Confirmar Devolução");
         btnDevolver.setBackground(new Color(200, 100, 100));
@@ -135,7 +129,6 @@ public class PainelEmprestimo extends JPanel {
         cbExemplares.removeAllItems();
         listaExemplaresCache = new java.util.ArrayList<>();
         
-        // Carrega livros e seus exemplares, criando o Wrapper com o Título
         var livros = new br.com.sgb.dao.LivroDAO().listarTodos();
         for (var livro : livros) {
             var exemplares = exemplarDAO.listarPorLivro(livro.getId());
@@ -152,15 +145,13 @@ public class PainelEmprestimo extends JPanel {
         filtrarTabela();
     }
     
-    // CORREÇÃO DA BUSCA: Case Insensitive no Título
     private void filtrarComboExemplares() {
-        String termo = txtFiltroLivro.getText().toLowerCase(); // Normaliza para minúsculo
+        String termo = txtFiltroLivro.getText().toLowerCase(); 
         cbExemplares.removeAllItems();
         
         if(listaExemplaresCache == null) return;
 
         for(ItemExemplar item : listaExemplaresCache) {
-            // Busca tanto no Título quanto no Código de Barras
             if(item.tituloLivro.toLowerCase().contains(termo) || 
                item.exemplar.getCodigoBarra().toLowerCase().contains(termo)) {
                 cbExemplares.addItem(item);
@@ -180,7 +171,6 @@ public class PainelEmprestimo extends JPanel {
         boolean mostrarHistorico = chkVerHistorico.isSelected();
 
         for (Emprestimo emp : listaEmprestimosCache) {
-            // Busca Case Insensitive
             boolean matchTexto = emp.getNomeLeitor().toLowerCase().contains(termo) ||
                                  emp.getTituloLivro().toLowerCase().contains(termo);
             
@@ -200,7 +190,7 @@ public class PainelEmprestimo extends JPanel {
     private void realizarEmprestimo() {
         try {
             Leitor leitor = (Leitor) cbLeitores.getSelectedItem();
-            ItemExemplar item = (ItemExemplar) cbExemplares.getSelectedItem(); // Pega o wrapper
+            ItemExemplar item = (ItemExemplar) cbExemplares.getSelectedItem(); 
 
             if (leitor == null || item == null) {
                 JOptionPane.showMessageDialog(this, "Selecione Leitor e Exemplar!");
@@ -209,7 +199,7 @@ public class PainelEmprestimo extends JPanel {
 
             Emprestimo emp = new Emprestimo();
             emp.setLeitorId(leitor.getId());
-            emp.setExemplarId(item.exemplar.getId()); // Extrai o ID do exemplar de dentro do wrapper
+            emp.setExemplarId(item.exemplar.getId()); 
             emp.setDataEmprestimo(LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
             emp.setDataPrevistaDevolucao(txtDataDevolucao.getText());
             
